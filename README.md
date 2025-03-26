@@ -40,7 +40,7 @@ const UTM_FIELDS = {
 };
 ```
 
-3. Set your primary domain and secondary domains (if any) for cross-domain tracking:
+3. Set your primary domain and secondary domains (if any) for multi-domain tracking:
 
 ```javascript
 // Configuration variables
