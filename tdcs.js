@@ -27,7 +27,9 @@ const SECONDARY_DOMAINS = ['domain2.com', 'domain3.com'];
 // Search Engine list
 const SE_LIST = new Map([
 	["www.google", "google"],
+	[".google.co", "google"],
 	["www.bing", "bing"],
+	[".bing.com", "bing"],
 	["www.yahoo", "yahoo"],
 	["search.yahoo", "yahoo"],
 	["yahoo.cn", "yahoo"],
@@ -64,6 +66,7 @@ const SE_LIST = new Map([
 // Social network domains
 const SOCIAL_LIST = new Map([
 	["linkedin.com", "linkedin"],
+	["com.linkedin.android", "linkedin"],
 	["facebook.com", "facebook"],
 	["twitter.com", "twitter"],
 	["x.com", "x"],
@@ -276,7 +279,7 @@ if (tdcs) {
 		}
 	}
 
-	debug(`UTM parameters: utm_source=${utm_source}, utm_medium=${utm_medium}, utm_campaign=${utm_campaign}, utm_term=${utm_term}, content=${utm_content}, utm_adgroup=${utm_adgroup}, utm_keyword=${utm_keyword}`);
+	debug(`UTM parameters: utm_source=${utm_source}, utm_medium=${utm_medium}, utm_campaign=${utm_campaign}, utm_term=${utm_term}, utm_content=${utm_content}, utm_adgroup=${utm_adgroup}, utm_keyword=${utm_keyword}`);
 
 	if (!utm_source && !utm_medium) {
 		// If no UTM parameters, check for click IDs
