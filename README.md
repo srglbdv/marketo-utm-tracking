@@ -1,4 +1,4 @@
-# TDCS - Traffic Data Capture Script for Marketo Forms
+# UTM Tracking Script for Marketo Forms
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
