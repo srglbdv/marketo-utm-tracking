@@ -19,7 +19,6 @@ The Traffic Data Capture Script (TDCS) is a comprehensive JavaScript solution de
 - 🔄 Supports cross-domain tracking between primary and secondary domains
 - 🍪 Creates first-party cookies for persistent tracking
 - 📊 Adds all captured data to Marketo forms as hidden fields
-- 🧩 Preserves attribution data across multiple sessions
 - 📋 Comprehensive debugging capabilities
 
 ## Quick Install
