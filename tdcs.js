@@ -1,8 +1,8 @@
 /*
  * TDCS (Traffic Data Capture Script) for Marketo Forms
  * @author Sergei Lebedev
- * @version v1.0.0 2024-09-26
- * @copyright © 2024 Sergei Lebedev
+ * @version v1.0.1 2024-04-28
+ * @copyright © 2025 Sergei Lebedev
  * @license MIT: This license must appear with all reproductions of this software.
  *
  */
