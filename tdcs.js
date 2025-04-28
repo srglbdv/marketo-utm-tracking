@@ -200,6 +200,11 @@ function extractSearchQuery(url) {
     return null;
 }
 
+// Helper function to determine if a value should be considered valid/non-empty
+const isValidValue = (value) => {
+    return value && value.trim() !== '' && value !== 'undefined' && value !== 'null';
+};
+
 // Main tracking logic
 debug('Starting main tracking logic');
 const referrer = document.referrer; // Get the referring URL
@@ -250,33 +255,47 @@ if (tdcs) {
 
 	// Collect all UTM parameters (case-insensitive)
 	for (const [key, value] of searchParams.entries()) {
-		const lowerKey = key.toLowerCase();
-		switch (lowerKey) {
-			case 'utm_source':
-				utm_source = value || null;
-				break;
-			case 'utm_medium':
-				utm_medium = value || null;
-				break;
-			case 'utm_campaign':
-			case 'ga_campaign':
-			case 'cq_cmp':
-				utm_campaign = value || null;
-				break;
-			case 'utm_term':
-				utm_term = value || null;
-				break;
-			case 'utm_content':
-				utm_content = value || null;
-				break;
-			case 'utm_adgroup':
-			case 'utm_ad_group':
-				utm_adgroup = value || null;
-				break;
-			case 'utm_keyword':
-				utm_keyword = value || null;
-				break;
-		}
+	    const lowerKey = key.toLowerCase();
+	    switch (lowerKey) {
+	        case 'utm_source':
+	            if (!isValidValue(utm_source)) {
+	                utm_source = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_medium':
+	            if (!isValidValue(utm_medium)) {
+	                utm_medium = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_campaign':
+	        case 'ga_campaign':
+	        case 'cq_cmp':
+	            if (!isValidValue(utm_campaign)) {
+	                utm_campaign = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_term':
+	            if (!isValidValue(utm_term)) {
+	                utm_term = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_content':
+	            if (!isValidValue(utm_content)) {
+	                utm_content = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_adgroup':
+	        case 'utm_ad_group':
+	            if (!isValidValue(utm_adgroup)) {
+	                utm_adgroup = isValidValue(value) ? value : null;
+	            }
+	            break;
+	        case 'utm_keyword':
+	            if (!isValidValue(utm_keyword)) {
+	                utm_keyword = isValidValue(value) ? value : null;
+	            }
+	            break;
+	    }
 	}
 
 	debug(`UTM parameters: utm_source=${utm_source}, utm_medium=${utm_medium}, utm_campaign=${utm_campaign}, utm_term=${utm_term}, utm_content=${utm_content}, utm_adgroup=${utm_adgroup}, utm_keyword=${utm_keyword}`);
