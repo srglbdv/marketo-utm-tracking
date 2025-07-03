@@ -1,7 +1,7 @@
 /*
  * TDCS (Traffic Data Capture Script) for Marketo Forms
  * @author Sergei Lebedev
- * @version v1.0.1 2025-04-28
+ * @version v1.0.2 2025-07-03
  * @copyright © 2025 Sergei Lebedev
  * @license MIT: This license must appear with all reproductions of this software.
  *
@@ -121,9 +121,14 @@ const CLIDS_LIST = new Map([
 	["aclid", "amazonin"]
 ]);
 
-// Debugging function
+// Search terms
+const SEARCH_TERMS = ['q', 'query', 'search', 'text', 'p', 'wd'];
+
+// Debug functionality
+const IS_DEBUG_MODE = window.location.hash === '#debug';
+
 function debug(message, obj) {
-	if (window.location.hash === '#debug') {
+	if (IS_DEBUG_MODE) {
 		if (obj === undefined) {
 			console.log(`[TDCS Debug] ${message}`);
 		} else {
@@ -133,9 +138,16 @@ function debug(message, obj) {
 }
 
 // Helper function to extract the root domain from a hostname
+const domainCache = new Map();
 function getRootDomain(hostname) {
+	if (domainCache.has(hostname)) {
+		return domainCache.get(hostname);
+	}
+	
 	const parts = hostname.split('.');
-	return parts.length > 2 ? parts.slice(-2).join('.') : hostname;
+	const rootDomain = parts.length > 2 ? parts.slice(-2).join('.') : hostname;
+	domainCache.set(hostname, rootDomain);
+	return rootDomain;
 }
 
 // Helper function to check if a domain matches exactly or is a subdomain of a social domain
@@ -150,31 +162,40 @@ function isSecondaryDomain(domain) {
 
 // Function to create a cookie with a specified expiration time
 function createCookie(name, value, days, domain) {
-	let expires = "";
-	if (days) {
-		const date = new Date();
-		date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-		expires = "; expires=" + date.toUTCString();
+	try {
+		let expires = "";
+		if (days) {
+			const date = new Date();
+			date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+			expires = "; expires=" + date.toUTCString();
+		}
+		const domainString = domain ? "; domain=" + domain : "";
+		document.cookie = name + "=" + value + expires + domainString + "; path=/;";
+		debug(`Cookie created: ${name} on domain: ${domain || 'current domain'}`);
+	} catch (e) {
+		debug(`Error creating cookie ${name}:`, e);
 	}
-	const domainString = domain ? "; domain=" + domain : "";
-	document.cookie = name + "=" + value + expires + domainString + "; path=/;";
-	debug(`Cookie created: ${name} on domain: ${domain || 'current domain'}`);
 }
 
 // Function to read a cookie value by name
 function readCookie(name) {
-	const nameEQ = name + "=";
-	const ca = document.cookie.split(';');
-	for (let i = 0; i < ca.length; i++) {
-		let c = ca[i];
-		while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-		if (c.indexOf(nameEQ) === 0) {
-			debug(`Cookie read: ${name}`);
-			return c.substring(nameEQ.length, c.length);
+	try {
+		const nameEQ = name + "=";
+		const ca = document.cookie.split(';');
+		for (let i = 0; i < ca.length; i++) {
+			let c = ca[i];
+			while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+			if (c.indexOf(nameEQ) === 0) {
+				debug(`Cookie read: ${name}`);
+				return c.substring(nameEQ.length, c.length);
+			}
 		}
+		debug(`Cookie not found: ${name}`);
+		return null;
+	} catch (e) {
+		debug(`Error reading cookie ${name}:`, e);
+		return null;
 	}
-	debug(`Cookie not found: ${name}`);
-	return null;
 }
 
 // Helper function to get case-insensitive URL parameter
@@ -185,24 +206,25 @@ function getParameterCaseInsensitive(url, key) {
 
 // Helper function to extract search query from URL
 function extractSearchQuery(url) {
-    try {
-        const searchParams = new URLSearchParams(url.substring(url.indexOf('?')));
-        debug('Search params:', Object.fromEntries(searchParams));
-        
-        const searchTerms = ['q', 'query', 'search', 'text', 'p', 'wd'];
-        for (const term of searchTerms) {
-            const value = searchParams.get(term);
-            if (value) return decodeURIComponent(value);
-        }
-    } catch (e) {
-        debug('Error in extractSearchQuery:', e);
-    }
-    return null;
+	try {
+		const searchParams = new URLSearchParams(url.substring(url.indexOf('?')));
+		debug('Search params:', Object.fromEntries(searchParams));
+		
+		// Use find() for early termination
+		for (const term of SEARCH_TERMS) {
+			const value = searchParams.get(term);
+			if (value) return decodeURIComponent(value);
+		}
+	} catch (e) {
+		debug('Error in extractSearchQuery:', e);
+	}
+	return null;
 }
 
 // Helper function to determine if a value should be considered valid/non-empty
 const isValidValue = (value) => {
-    return value && value.trim() !== '' && value !== 'undefined' && value !== 'null';
+	return value && typeof value === 'string' && value.trim() !== '' && 
+	       value !== 'undefined' && value !== 'null' && value !== '(not set)';
 };
 
 // Main tracking logic
@@ -254,49 +276,40 @@ if (tdcs) {
 	debug('No existing traffic data, collecting new data');
 
 	// Collect all UTM parameters (case-insensitive)
-	for (const [key, value] of searchParams.entries()) {
-	    const lowerKey = key.toLowerCase();
-	    switch (lowerKey) {
-	        case 'utm_source':
-	            if (!isValidValue(utm_source)) {
-	                utm_source = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_medium':
-	            if (!isValidValue(utm_medium)) {
-	                utm_medium = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_campaign':
-	        case 'ga_campaign':
-	        case 'cq_cmp':
-	            if (!isValidValue(utm_campaign)) {
-	                utm_campaign = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_term':
-	            if (!isValidValue(utm_term)) {
-	                utm_term = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_content':
-	            if (!isValidValue(utm_content)) {
-	                utm_content = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_adgroup':
-	        case 'utm_ad_group':
-	            if (!isValidValue(utm_adgroup)) {
-	                utm_adgroup = isValidValue(value) ? value : null;
-	            }
-	            break;
-	        case 'utm_keyword':
-	            if (!isValidValue(utm_keyword)) {
-	                utm_keyword = isValidValue(value) ? value : null;
-	            }
-	            break;
-	    }
+	function getParameterCaseInsensitive(searchParams, paramName) {
+		// Try exact match first (most common case)
+		let value = searchParams.get(paramName);
+		if (value !== null) return value;
+		
+		// Fall back to case-insensitive search
+		const lowerParamName = paramName.toLowerCase();
+		for (const [key, val] of searchParams.entries()) {
+			if (key.toLowerCase() === lowerParamName) {
+				return val;
+			}
+		}
+		return null;
 	}
+
+	utm_source = getParameterCaseInsensitive(searchParams, 'utm_source');
+	utm_medium = getParameterCaseInsensitive(searchParams, 'utm_medium');
+	utm_campaign = getParameterCaseInsensitive(searchParams, 'utm_campaign') || 
+				getParameterCaseInsensitive(searchParams, 'ga_campaign') || 
+				getParameterCaseInsensitive(searchParams, 'cq_cmp');
+	utm_term = getParameterCaseInsensitive(searchParams, 'utm_term');
+	utm_content = getParameterCaseInsensitive(searchParams, 'utm_content');
+	utm_adgroup = getParameterCaseInsensitive(searchParams, 'utm_adgroup') || 
+				getParameterCaseInsensitive(searchParams, 'utm_ad_group');
+	utm_keyword = getParameterCaseInsensitive(searchParams, 'utm_keyword');
+
+	// Apply validation
+	utm_source = isValidValue(utm_source) ? utm_source : null;
+	utm_medium = isValidValue(utm_medium) ? utm_medium : null;
+	utm_campaign = isValidValue(utm_campaign) ? utm_campaign : null;
+	utm_term = isValidValue(utm_term) ? utm_term : null;
+	utm_content = isValidValue(utm_content) ? utm_content : null;
+	utm_adgroup = isValidValue(utm_adgroup) ? utm_adgroup : null;
+	utm_keyword = isValidValue(utm_keyword) ? utm_keyword : null;
 
 	debug(`UTM parameters: utm_source=${utm_source}, utm_medium=${utm_medium}, utm_campaign=${utm_campaign}, utm_term=${utm_term}, utm_content=${utm_content}, utm_adgroup=${utm_adgroup}, utm_keyword=${utm_keyword}`);
 
@@ -402,8 +415,12 @@ if (tdcs) {
 	debug('Visitor attributes compiled', visitorAttributes);
 
 	// Store visitor attributes in session storage
-	sessionStorage.setItem("tdcs", btoa(JSON.stringify(visitorAttributes)));
-	debug('Visitor attributes stored in session storage');
+	try {
+		sessionStorage.setItem("tdcs", btoa(JSON.stringify(visitorAttributes)));
+		debug('Visitor attributes stored in session storage');
+	} catch (e) {
+		debug('Error storing TDCS data in session storage:', e);
+	}
 }
 
 // Handle initial visit cookie

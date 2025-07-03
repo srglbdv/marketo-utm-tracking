@@ -7,7 +7,7 @@
 The Traffic Data Capture Script (TDCS) is a comprehensive JavaScript solution designed to track and capture marketing attribution data for Marketo forms. It automatically collects UTM parameters, click IDs, referrer information, and other traffic sources to provide reliable marketing attribution for your lead generation efforts.
 
 **Author:** Sergei Lebedev  
-**Version:** v1.0.1 (2025-04-28)  
+**Version:** v1.0.2 (2025-07-03)  
 **License:** MIT
 
 ## Key Features
